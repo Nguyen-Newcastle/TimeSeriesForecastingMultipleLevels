@@ -29,6 +29,17 @@ services:
       - POSTGRES_PORT=5432
     ports:
       - "5432:5432"
+  
+  minio:
+    image: minio/minio
+    command: server /data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
 
   airflow-init:
     << : *airflow-common
@@ -62,6 +73,7 @@ services:
     container_name: airflow_scheduler
     restart: always
 
-  
+volumes:
+  minio_data:  
     
 

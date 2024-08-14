@@ -10,8 +10,16 @@
 # Use an official Python runtime as a parent image
 FROM python:3.10-slim
 
+# Install required packages including wget
+RUN apt-get update && apt-get install -y wget
+
 # Install any needed packages specified in requirements.txt
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install MinIO client
+RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc \
+    && chmod +x mc \
+    && mv mc /usr/local/bin/
 
 RUN pip install "apache-airflow==2.4.2" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.4.2/constraints-3.10.txt"

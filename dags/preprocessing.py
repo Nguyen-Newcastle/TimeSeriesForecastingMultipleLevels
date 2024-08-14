@@ -6,6 +6,29 @@ import sklearn.metrics as skm
 from tsai.inference import load_learner
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import matplotlib.pyplot as plt
+from minio import Minio
+import io
+import pickle
+
+minio_client = Minio(
+    "minio:9000",
+    access_key="minioadmin",
+    secret_key="minioadmin",
+    secure=False
+)
+# Ensure the bucket exists
+bucket_name = "output-data"
+if not minio_client.bucket_exists(bucket_name):
+    minio_client.make_bucket(bucket_name)
+
+
+def minio_save_object(obj, bucket_name, object_name):
+    pickled_data = pickle.dumps(obj)
+    minio_client.put_object(bucket_name, object_name, io.BytesIO(pickled_data), len(pickled_data), content_type="application/octet-stream")
+
+def minio_load_object(bucket_name, object_name):
+    response = minio_client.get_object(bucket_name, object_name)
+    return pickle.loads(response.read())
 
 
 def raw_data_initial_processing(df_raw, dataset_file_name, output_dir = "./OUTPUT_DATA"):
@@ -34,6 +57,11 @@ def raw_data_initial_processing(df_raw, dataset_file_name, output_dir = "./OUTPU
     mkdir(os.path.join(output_dir, dataset_file_name), exist_ok=True, parents=True)
     save_object(preproc_pipe, f'{output_dir}/{dataset_file_name}/preproc_pipe_{dataset_file_name}.pkl')
     preproc_pipe = load_object(f'{output_dir}/{dataset_file_name}/preproc_pipe_{dataset_file_name}.pkl')
+
+    # Upload the pipeline object to MinIO
+    object_name = f'{dataset_file_name}/preproc_pipe_{dataset_file_name}.pkl'
+    minio_save_object(preproc_pipe, bucket_name, object_name)
+    print("Save the preprocessing pipeline to MinIO")
     
     return df
 
@@ -72,6 +100,11 @@ def getting_forecast_split(df, dataset_file_name, fcst_history = 104, fcst_horiz
     save_object(exp_pipe, f'{output_dir}/{dataset_file_name}/exp_pipe_{dataset_file_name}.pkl')
     exp_pipe = load_object(f'{output_dir}/{dataset_file_name}/exp_pipe_{dataset_file_name}.pkl')
 
+    # Upload the pipeline object to MinIO
+    object_name = f'{dataset_file_name}/exp_pipe_{dataset_file_name}.pkl'
+    minio_save_object(exp_pipe, bucket_name, object_name)
+    print("Save the preprocessing pipeline to MinIO")
+
     # Saving the train subset DataFrame to a CSV file
     train_df = df.iloc[splits[0], :]
     output_path = os.path.join(output_dir, dataset_file_name, f"{dataset_file_name}_train.csv")
@@ -89,6 +122,13 @@ def getting_forecast_split(df, dataset_file_name, fcst_history = 104, fcst_horiz
     output_path = os.path.join(output_dir, dataset_file_name, f"{dataset_file_name}_test.csv")
     test_df.to_csv(output_path, index=False)
     print(f"Test set saved to {output_path}")
+
+    # Save the DataFrames to MinIO as CSV
+    for split_name, df_split in zip(["train", "valid", "test"], [train_df, valid_df, test_df]):
+        csv_data = df_split.to_csv(index=False)
+        minio_client.put_object(bucket_name, f"{dataset_file_name}/{dataset_file_name}_{split_name}.csv", io.BytesIO(csv_data.encode('utf-8')), len(csv_data), content_type="text/csv")
+        print(f"{split_name} set uploaded to MinIO as {dataset_file_name}_{split_name}.csv")
+
 
     x_vars = df.columns[1:]
     y_vars = df.columns[1:]
@@ -139,6 +179,12 @@ def saving_train_results(X, y, splits, model_dir, dataset_file_name, output_dir 
 
     results_df.to_csv(f"{output_dir}/{dataset_file_name}/{dataset_file_name}_train_result.csv")
 
+    # Convert DataFrame to CSV and upload to MinIO
+    csv_data = results_df.to_csv(index=False)
+    object_name = f"{dataset_file_name}/{dataset_file_name}_train_result.csv"
+    minio_client.put_object(bucket_name, object_name, io.BytesIO(csv_data.encode('utf-8')), len(csv_data), content_type="text/csv")
+    print(f"Train result uploaded to MinIO as {object_name}")
+
 
 def saving_validation_results(X, y, splits, model_dir, dataset_file_name, output_dir = "OUTPUT_DATA"):
 
@@ -159,6 +205,12 @@ def saving_validation_results(X, y, splits, model_dir, dataset_file_name, output
 
     results_df.to_csv(f"{output_dir}/{dataset_file_name}/{dataset_file_name}_validation_result.csv")
 
+    # Convert DataFrame to CSV and upload to MinIO
+    csv_data = results_df.to_csv(index=False)
+    object_name = f"{dataset_file_name}/{dataset_file_name}_validation_result.csv"
+    minio_client.put_object(bucket_name, object_name, io.BytesIO(csv_data.encode('utf-8')), len(csv_data), content_type="text/csv")
+    print(f"Validation result uploaded to MinIO as {object_name}")
+
 
 def saving_test_results(X, y, splits, model_dir, dataset_file_name, output_dir = "OUTPUT_DATA"):
 
@@ -178,6 +230,12 @@ def saving_test_results(X, y, splits, model_dir, dataset_file_name, output_dir =
     print("The MAE test result for the initial time series dataset is ", results_df.loc["valid", "mae"])
 
     results_df.to_csv(f"{output_dir}/{dataset_file_name}/{dataset_file_name}_test_result.csv")
+
+    # Convert DataFrame to CSV and upload to MinIO
+    csv_data = results_df.to_csv(index=False)
+    object_name = f"{dataset_file_name}/{dataset_file_name}_test_result.csv"
+    minio_client.put_object(bucket_name, object_name, io.BytesIO(csv_data.encode('utf-8')), len(csv_data), content_type="text/csv")
+    print(f"Test result uploaded to MinIO as {object_name}")
 
 
 def inference_by_timestamp(dataset_file_name, timestamp = "2018-03-24 16:00:00", 
@@ -210,3 +268,9 @@ def inference_by_timestamp(dataset_file_name, timestamp = "2018-03-24 16:00:00",
     save_dir = f"{save_results_dir}/{dataset_file_name}/inference_{model_dir.split('/')[-1]}_{timestamp}.csv"
     preds_df.to_csv(save_dir, index=False)
     print(f"Inference result of {timestamp} saved to {save_dir}")
+
+    # Save predictions to MinIO
+    csv_data = preds_df.to_csv(index=False)
+    object_name = f"{dataset_file_name}/inference_{model_dir.split('/')[-1]}_{timestamp}.csv"
+    minio_client.put_object(bucket_name, object_name, io.BytesIO(csv_data.encode('utf-8')), len(csv_data), content_type="text/csv")
+    print(f"Inference result uploaded to MinIO as {object_name}")
