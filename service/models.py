@@ -8,7 +8,7 @@ import sklearn
 import sklearn.metrics as skm
 
 
-def processing_and_training_pipeline_for_easy_level(dataset_path = "./INPUT_DATA", output_dir = "./OUTPUT_DATA",
+def processing_and_training_pipeline_for_easy_level(dataset_path = "/INPUT_DATA", output_dir = "/OUTPUT_DATA",
                                     list_of_timestamps = pd.date_range(start = "2018-03-21 16:00:00", end = "2018-03-24 16:00:00", freq="1H")):
 
     mkdir(output_dir, exist_ok=True, parents=True)
@@ -73,7 +73,7 @@ def processing_and_training_pipeline_for_easy_level(dataset_path = "./INPUT_DATA
                                        save_results_dir = output_dir)
 
 
-def processing_and_training_pipeline_for_medium_level(dataset_path = "./INPUT_DATA", output_dir = "./OUTPUT_DATA",
+def processing_and_training_pipeline_for_medium_level(dataset_path = "/INPUT_DATA", output_dir = "/OUTPUT_DATA",
                                     list_of_timestamps = pd.date_range(start = "2018-03-21 16:00:00", end = "2018-03-24 16:00:00", freq="1H")):
 
     mkdir(output_dir, exist_ok=True, parents=True)
@@ -102,6 +102,11 @@ def processing_and_training_pipeline_for_medium_level(dataset_path = "./INPUT_DA
             learn.fit_one_cycle(n_epochs, lr_max=lr_max)
             learn.export(f'models/patchTST_{file}_MEDIUM.pt')
 
+            #save the training process of the model to somewhere
+            train_process_df = pd.DataFrame(learn.recorder.values, columns = learn.recorder.metric_names[1:-1])
+            train_process_df["epoch"] = pd.Series([i for i in range(n_epochs)])
+            train_process_df.to_csv(f'{output_dir}/{file}/{file}_training_process.csv', index=False)
+
             #Test the model on the validation and test subset and save the results
             saving_train_results(X, y, splits, f'{output_dir}/models/patchTST_{file}_MEDIUM.pt', file)
             saving_validation_results(X, y, splits, f'{output_dir}/models/patchTST_{file}_MEDIUM.pt', file)
@@ -116,7 +121,7 @@ def processing_and_training_pipeline_for_medium_level(dataset_path = "./INPUT_DA
                                        save_results_dir = output_dir)
 
 
-def processing_and_training_pipeline_for_hard_level(dataset_path = "./INPUT_DATA", output_dir = "./OUTPUT_DATA",
+def processing_and_training_pipeline_for_hard_level(dataset_path = "/INPUT_DATA", output_dir = "/OUTPUT_DATA",
                                     list_of_timestamps = pd.date_range(start = "2018-03-21 16:00:00", end = "2018-03-24 16:00:00", freq="1H")):
 
     mkdir(output_dir, exist_ok=True, parents=True)
@@ -197,6 +202,11 @@ def processing_and_training_pipeline_for_hard_level(dataset_path = "./INPUT_DATA
             #Retrain with the best found model and save it somewhere
             learn = create_best_performing_model(study, file)
 
+            #save the training process of the model to somewhere
+            train_process_df = pd.DataFrame(learn.recorder.values, columns = learn.recorder.metric_names[1:-1])
+            train_process_df["epoch"] = pd.Series([i for i in range(20)])
+            train_process_df.to_csv(f'{output_dir}/{file}/{file}_training_process.csv', index=False)
+
             #Test the model on the validation and test subset and save the results
             saving_train_results(X, y, splits, f'{output_dir}/models/patchTST_{file}_HARD.pt', file)
             saving_validation_results(X, y, splits, f'{output_dir}/models/patchTST_{file}_HARD.pt', file)
@@ -207,6 +217,6 @@ def processing_and_training_pipeline_for_hard_level(dataset_path = "./INPUT_DATA
                 inference_by_timestamp(file, timestamp = timestamp, 
                                       fcast_history = 72, fcst_horizon = 24, 
                         freq = "1H", datetime_col = "date", model_dir = f'{output_dir}/models/patchTST_{file}_HARD.pt', 
-                                       save_results_dir = "OUTPUT_DATA")
+                                       save_results_dir = output_dir)
 
 

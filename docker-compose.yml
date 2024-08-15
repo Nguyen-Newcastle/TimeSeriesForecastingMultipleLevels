@@ -73,6 +73,15 @@ services:
     container_name: airflow_scheduler
     restart: always
 
+  service:
+    build: .
+    container_name: fastapi_service
+    volumes:
+      - ./service:/service
+      - ./INPUT_DATA:/INPUT_DATA
+    ports:
+      - "8000:8000"
+
 volumes:
   minio_data:  
     

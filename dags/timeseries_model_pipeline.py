@@ -1,14 +1,12 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
+from airflow.providers.http.operators.http import SimpleHttpOperator
 from datetime import datetime, timedelta
-from models import (processing_and_training_pipeline_for_easy_level, 
-                         processing_and_training_pipeline_for_medium_level,
-                         processing_and_training_pipeline_for_hard_level)
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 1, 1),
+    'start_date': datetime(2024, 8, 15),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -22,30 +20,27 @@ dag = DAG(
     schedule_interval=timedelta(days=1),
 )
 
-def process_easy_level():
-    processing_and_training_pipeline_for_easy_level()
-
-def process_medium_level():
-    processing_and_training_pipeline_for_medium_level()
-
-def process_hard_level():
-    processing_and_training_pipeline_for_hard_level()
-
-t1 = PythonOperator(
+t1 = SimpleHttpOperator(
     task_id='process_easy_level',
-    python_callable=process_easy_level,
+    method='POST',
+    http_conn_id='fastapi_conn',
+    endpoint='/process/easy',
     dag=dag,
 )
 
-t2 = PythonOperator(
+t2 = SimpleHttpOperator(
     task_id='process_medium_level',
-    python_callable=process_medium_level,
+    method='POST',
+    http_conn_id='fastapi_conn',
+    endpoint='/process/medium',
     dag=dag,
 )
 
-t3 = PythonOperator(
+t3 = SimpleHttpOperator(
     task_id='process_hard_level',
-    python_callable=process_hard_level,
+    method='POST',
+    http_conn_id='fastapi_conn',
+    endpoint='/process/hard',
     dag=dag,
 )
 

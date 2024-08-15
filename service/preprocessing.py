@@ -31,7 +31,7 @@ def minio_load_object(bucket_name, object_name):
     return pickle.loads(response.read())
 
 
-def raw_data_initial_processing(df_raw, dataset_file_name, output_dir = "./OUTPUT_DATA"):
+def raw_data_initial_processing(df_raw, dataset_file_name, output_dir = "/OUTPUT_DATA"):
 
     """
     Preprocessing of the original data, shrinking memory, dropping duplicates,
@@ -67,7 +67,7 @@ def raw_data_initial_processing(df_raw, dataset_file_name, output_dir = "./OUTPU
 
 
 def getting_forecast_split(df, dataset_file_name, fcst_history = 104, fcst_horizon = 60, valid_size = 0.15, test_size = 0.2, datetime_col = "date", 
-                            output_dir = "./OUTPUT_DATA"):
+                            output_dir = "/OUTPUT_DATA"):
 
     """
     Getting the forecast split into training set, valid set and test set, and finally save the dataframe of all of them
@@ -154,13 +154,13 @@ def creating_the_forecaster(X, y, splits, arch_config = dict(
     exp_pipe = load_object(exp_pipe_dir)
     preproc_pipe = load_object(preproc_pipe_dir)
 
-    learn = TSForecaster(X, y, splits=splits, batch_size=16, path="OUTPUT_DATA", pipelines=[preproc_pipe, exp_pipe],
-                     arch="PatchTST", arch_config=arch_config, metrics=[mse, mae], cbs=ShowGraph())
+    learn = TSForecaster(X, y, splits=splits, batch_size=16, path="/OUTPUT_DATA", pipelines=[preproc_pipe, exp_pipe],
+                     arch="PatchTST", arch_config=arch_config, metrics=[mse, mae])
      
     return learn
 
 
-def saving_train_results(X, y, splits, model_dir, dataset_file_name, output_dir = "OUTPUT_DATA"):
+def saving_train_results(X, y, splits, model_dir, dataset_file_name, output_dir = "/OUTPUT_DATA"):
 
     mkdir(output_dir, exist_ok=True, parents=True)
 
@@ -186,7 +186,7 @@ def saving_train_results(X, y, splits, model_dir, dataset_file_name, output_dir 
     print(f"Train result uploaded to MinIO as {object_name}")
 
 
-def saving_validation_results(X, y, splits, model_dir, dataset_file_name, output_dir = "OUTPUT_DATA"):
+def saving_validation_results(X, y, splits, model_dir, dataset_file_name, output_dir = "/OUTPUT_DATA"):
 
     mkdir(output_dir, exist_ok=True, parents=True)
 
@@ -212,7 +212,7 @@ def saving_validation_results(X, y, splits, model_dir, dataset_file_name, output
     print(f"Validation result uploaded to MinIO as {object_name}")
 
 
-def saving_test_results(X, y, splits, model_dir, dataset_file_name, output_dir = "OUTPUT_DATA"):
+def saving_test_results(X, y, splits, model_dir, dataset_file_name, output_dir = "/OUTPUT_DATA"):
 
     mkdir(output_dir, exist_ok=True, parents=True)
 
@@ -240,7 +240,7 @@ def saving_test_results(X, y, splits, model_dir, dataset_file_name, output_dir =
 
 def inference_by_timestamp(dataset_file_name, timestamp = "2018-03-24 16:00:00", 
                            fcast_history = 72, fcst_horizon = 24, 
-                           freq = "1H", datetime_col = "date", model_dir = 'models/models/patchTST.pt', save_results_dir = "OUTPUT_DATA"):
+                           freq = "1H", datetime_col = "date", model_dir = 'models/models/patchTST.pt', save_results_dir = "/OUTPUT_DATA"):
 
 
     #Loading the data of the 72 timestamps prior to the current timestamp, in an input data dir
