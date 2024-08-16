@@ -9,7 +9,7 @@ import sklearn.metrics as skm
 
 
 def processing_and_training_pipeline_for_easy_level(dataset_path = "/INPUT_DATA", output_dir = "/OUTPUT_DATA",
-                                    list_of_timestamps = pd.date_range(start = "2018-03-21 16:00:00", end = "2018-03-24 16:00:00", freq="1H")):
+                                    list_of_timestamps = pd.date_range(start = "2018-03-20 16:00:00", end = "2018-03-24 16:00:00", freq="1H")):
 
     mkdir(output_dir, exist_ok=True, parents=True)
     # Configure logging
@@ -74,7 +74,7 @@ def processing_and_training_pipeline_for_easy_level(dataset_path = "/INPUT_DATA"
 
 
 def processing_and_training_pipeline_for_medium_level(dataset_path = "/INPUT_DATA", output_dir = "/OUTPUT_DATA",
-                                    list_of_timestamps = pd.date_range(start = "2018-03-21 16:00:00", end = "2018-03-24 16:00:00", freq="1H")):
+                                    list_of_timestamps = pd.date_range(start = "2018-03-20 16:00:00", end = "2018-03-24 16:00:00", freq="1H")):
 
     mkdir(output_dir, exist_ok=True, parents=True)
 

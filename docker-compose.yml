@@ -79,6 +79,7 @@ services:
     volumes:
       - ./service:/service
       - ./INPUT_DATA:/INPUT_DATA
+      - ./OUTPUT_DATA:/OUTPUT_DATA
     ports:
       - "8000:8000"
 
